@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgres
+    container_name: postgres-iut-notify
+    restart: always
+    ports:
+      - '5430:5432'
+    environment:
+      POSTGRES_USER: king-martinien
+      POSTGRES_PASSWORD: '@IutNotify'
+      POSTGRES_DB: iut_notify
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - postgres:/data/postgres
+
+  smtp4dev:
+    image: rnwood/smtp4dev:v3
+    container_name: smtp4dev-iut-notify
+    restart: always
+    ports:
+      - '1080:80'
+      - '1025:25'
+
+volumes:
+  postgres:
+    driver: local
