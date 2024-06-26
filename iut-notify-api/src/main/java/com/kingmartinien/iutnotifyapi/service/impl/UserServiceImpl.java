@@ -1,26 +1,32 @@
 package com.kingmartinien.iutnotifyapi.service.impl;
 
+import com.kingmartinien.iutnotifyapi.dto.LoginRequestDto;
+import com.kingmartinien.iutnotifyapi.dto.LoginResponseDto;
 import com.kingmartinien.iutnotifyapi.entity.Activation;
 import com.kingmartinien.iutnotifyapi.entity.Role;
+import com.kingmartinien.iutnotifyapi.entity.Token;
 import com.kingmartinien.iutnotifyapi.entity.User;
 import com.kingmartinien.iutnotifyapi.enums.EmailTemplateEnum;
 import com.kingmartinien.iutnotifyapi.repository.ActivationRepository;
 import com.kingmartinien.iutnotifyapi.repository.RoleRepository;
+import com.kingmartinien.iutnotifyapi.repository.TokenRepository;
 import com.kingmartinien.iutnotifyapi.repository.UserRepository;
+import com.kingmartinien.iutnotifyapi.security.JwtService;
 import com.kingmartinien.iutnotifyapi.service.EmailService;
 import com.kingmartinien.iutnotifyapi.service.UserService;
 import jakarta.mail.MessagingException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -29,8 +35,11 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final ActivationRepository activationRepository;
+    private final TokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
 
     @Value("${application.activation-code.expiration}")
     private Long ACTIVATION_CODE_EXPIRATION;
@@ -70,6 +79,42 @@ public class UserServiceImpl implements UserService {
         this.userRepository.save(user);
         activation.setActivated(true);
         this.activationRepository.save(activation);
+    }
+
+    @Override
+    public LoginResponseDto login(LoginRequestDto loginRequestDto) {
+        Authentication authentication = this.authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginRequestDto.getEmail(), loginRequestDto.getPassword())
+        );
+        if (authentication.isAuthenticated()) {
+            User user = (User) authentication.getPrincipal();
+            HashMap<String, Object> claims = new HashMap<>();
+            claims.put("fullname", user.getFullName());
+            String accessToken = this.jwtService.generateAccessToken(claims, user);
+            String refreshToken = this.jwtService.generateRefreshToken(claims, user);
+            this.revokeUserTokens(user);
+            this.saveToken(accessToken, refreshToken, user);
+            return LoginResponseDto.builder()
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .build();
+        }
+        return null;
+    }
+
+    private void revokeUserTokens(User user) {
+        List<Token> userTokens = this.tokenRepository.findAllByUser(user);
+        userTokens.forEach(token -> token.setExpired(true));
+        this.tokenRepository.saveAll(userTokens);
+    }
+
+    private void saveToken(String accessToken, String refreshToken, User user) {
+        Token token = Token.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .user(user)
+                .build();
+        this.tokenRepository.save(token);
     }
 
     private void checkIfUserAlreadyExist(User user) {

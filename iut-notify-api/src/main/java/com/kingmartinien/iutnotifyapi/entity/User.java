@@ -48,10 +48,10 @@ public class User implements UserDetails {
     private String password;
 
     @Column(name = "enabled")
-    private Boolean enabled = false;
+    private boolean enabled;
 
     @Column(name = "account_locked")
-    private Boolean accountLocked = false;
+    private boolean accountLocked;
 
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.DETACH)
     @JoinTable(
