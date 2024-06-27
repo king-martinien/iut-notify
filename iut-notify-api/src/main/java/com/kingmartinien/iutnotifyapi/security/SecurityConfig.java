@@ -29,7 +29,11 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize ->
-                        authorize.requestMatchers(HttpMethod.POST, "/auth/**").permitAll()
+                        authorize.requestMatchers(HttpMethod.POST,
+                                        "/auth/register",
+                                        "/auth/activate-account",
+                                        "/auth/login"
+                                ).permitAll()
                                 .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(this.authenticationProvider)

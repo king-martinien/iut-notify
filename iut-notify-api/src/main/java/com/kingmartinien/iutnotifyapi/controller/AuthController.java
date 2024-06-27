@@ -37,5 +37,11 @@ public class AuthController {
         return this.userService.login(loginRequestDto);
     }
 
+    @PostMapping("logout")
+    @ResponseStatus(HttpStatus.OK)
+    public void logout() {
+        this.userService.logout();
+    }
+
 
 }

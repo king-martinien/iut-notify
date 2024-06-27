@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -100,6 +101,12 @@ public class UserServiceImpl implements UserService {
                     .build();
         }
         return null;
+    }
+
+    @Override
+    public void logout() {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        this.revokeUserTokens(user);
     }
 
     private void revokeUserTokens(User user) {

@@ -13,4 +13,6 @@ public interface UserService {
 
     LoginResponseDto login(LoginRequestDto loginRequestDto);
 
+    void logout();
+
 }
