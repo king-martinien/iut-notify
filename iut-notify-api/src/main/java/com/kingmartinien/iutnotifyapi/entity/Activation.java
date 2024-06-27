@@ -28,7 +28,7 @@ public class Activation {
     @Column(name = "activated")
     private boolean activated;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "user_id_fk", nullable = false)
     private User user;
 

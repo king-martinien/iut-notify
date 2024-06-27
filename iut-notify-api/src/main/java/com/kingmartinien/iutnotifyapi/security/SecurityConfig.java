@@ -33,7 +33,8 @@ public class SecurityConfig {
                                         "/auth/register",
                                         "/auth/activate-account",
                                         "/auth/login",
-                                        "/auth/refresh-token"
+                                        "/auth/refresh-token",
+                                        "/auth/password-reset/**"
                                 ).permitAll()
                                 .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

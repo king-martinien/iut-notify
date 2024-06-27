@@ -3,6 +3,7 @@ package com.kingmartinien.iutnotifyapi.service.impl;
 import com.kingmartinien.iutnotifyapi.dto.LoginRequestDto;
 import com.kingmartinien.iutnotifyapi.dto.LoginResponseDto;
 import com.kingmartinien.iutnotifyapi.dto.RefreshTokenDto;
+import com.kingmartinien.iutnotifyapi.dto.ResetPasswordDto;
 import com.kingmartinien.iutnotifyapi.entity.Activation;
 import com.kingmartinien.iutnotifyapi.entity.Role;
 import com.kingmartinien.iutnotifyapi.entity.Token;
@@ -51,6 +52,8 @@ public class UserServiceImpl implements UserService {
     private String ACTIVATION_CODE_CHARACTERS;
     @Value("${application.activation-code.activationUrl}")
     private String ACTIVATION_CODE_URL;
+    @Value("${application.reset-password.url}")
+    private String RESET_PASSWORD_URL;
 
     @Override
     @Transactional
@@ -116,6 +119,32 @@ public class UserServiceImpl implements UserService {
         return generateLoginResponseDto(claims, user);
     }
 
+    @Override
+    public void requestPasswordReset(String email) throws MessagingException {
+        User user = this.userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        this.sendResetPasswordEmail(user);
+    }
+
+    @Override
+    public void resetPassword(String token, String email, ResetPasswordDto resetPasswordDto) {
+        Activation activation = this.activationRepository.findByCode(token)
+                .orElseThrow(() -> new RuntimeException("Token code not found"));
+        if (activation.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Token has expired");
+        }
+        User user = this.userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (activation.getUser().getEmail().equals(user.getEmail())) {
+            user.setPassword(this.passwordEncoder.encode(resetPasswordDto.getPassword()));
+            this.userRepository.save(user);
+            activation.setActivated(true);
+            this.activationRepository.save(activation);
+        }
+
+    }
+
     private LoginResponseDto generateLoginResponseDto(HashMap<String, Object> claims, User user) {
         claims.put("fullname", user.getFullName());
         String accessToken = this.jwtService.generateAccessToken(claims, user);
@@ -157,6 +186,11 @@ public class UserServiceImpl implements UserService {
                 code,
                 ACTIVATION_CODE_URL,
                 EmailTemplateEnum.ACCOUNT_ACTIVATION);
+    }
+
+    private void sendResetPasswordEmail(User user) throws MessagingException {
+        String code = this.generateAndSaveActivationCode(user);
+        this.emailService.sendResetPasswordEmail(user, code, RESET_PASSWORD_URL);
     }
 
     private String generateAndSaveActivationCode(User user) {

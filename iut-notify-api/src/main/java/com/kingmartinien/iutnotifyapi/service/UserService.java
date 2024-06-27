@@ -3,6 +3,7 @@ package com.kingmartinien.iutnotifyapi.service;
 import com.kingmartinien.iutnotifyapi.dto.LoginRequestDto;
 import com.kingmartinien.iutnotifyapi.dto.LoginResponseDto;
 import com.kingmartinien.iutnotifyapi.dto.RefreshTokenDto;
+import com.kingmartinien.iutnotifyapi.dto.ResetPasswordDto;
 import com.kingmartinien.iutnotifyapi.entity.User;
 import jakarta.mail.MessagingException;
 
@@ -17,5 +18,9 @@ public interface UserService {
     void logout();
 
     LoginResponseDto refreshToken(RefreshTokenDto refreshTokenDto);
+
+    void requestPasswordReset(String email) throws MessagingException;
+
+    void resetPassword(String token, String email, ResetPasswordDto resetPasswordDto);
 
 }

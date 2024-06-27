@@ -1,5 +1,6 @@
 package com.kingmartinien.iutnotifyapi.service.impl;
 
+import com.kingmartinien.iutnotifyapi.entity.User;
 import com.kingmartinien.iutnotifyapi.enums.EmailTemplateEnum;
 import com.kingmartinien.iutnotifyapi.service.EmailService;
 import jakarta.mail.MessagingException;
@@ -59,6 +60,36 @@ public class EmailServiceImpl implements EmailService {
 
         this.mailSender.send(mimeMessage);
 
+    }
+
+    @Override
+    public void sendResetPasswordEmail(User user, String code, String url) throws MessagingException {
+        final String SUBJECT = "Reset Password";
+        MimeMessage mimeMessage = this.mailSender.createMimeMessage();
+        MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(
+                mimeMessage,
+                MimeMessageHelper.MULTIPART_MODE_MIXED,
+                StandardCharsets.UTF_8.name());
+
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("to", user.getEmail());
+        properties.put("fullName", user.getFullName());
+        properties.put("subject", SUBJECT);
+        properties.put("code", code);
+        properties.put("url", url);
+
+        Context context = new Context();
+        context.setVariables(properties);
+
+        mimeMessageHelper.setFrom("no-reply@iut-notify.com");
+        mimeMessageHelper.setTo(user.getEmail());
+        mimeMessageHelper.setSubject(SUBJECT);
+        mimeMessageHelper.setSentDate(Date.from(Instant.now()));
+
+        String template = this.templateEngine.process(EmailTemplateEnum.RESET_PASSWORD.getValue(), context);
+        mimeMessageHelper.setText(template, true);
+
+        this.mailSender.send(mimeMessage);
     }
 
 }

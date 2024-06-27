@@ -1,9 +1,6 @@
 package com.kingmartinien.iutnotifyapi.controller;
 
-import com.kingmartinien.iutnotifyapi.dto.CreateUserDto;
-import com.kingmartinien.iutnotifyapi.dto.LoginRequestDto;
-import com.kingmartinien.iutnotifyapi.dto.LoginResponseDto;
-import com.kingmartinien.iutnotifyapi.dto.RefreshTokenDto;
+import com.kingmartinien.iutnotifyapi.dto.*;
 import com.kingmartinien.iutnotifyapi.mapper.UserMapper;
 import com.kingmartinien.iutnotifyapi.service.UserService;
 import jakarta.mail.MessagingException;
@@ -48,6 +45,22 @@ public class AuthController {
     @ResponseStatus(HttpStatus.OK)
     public LoginResponseDto refreshToken(@RequestBody @Valid RefreshTokenDto refreshTokenDto) {
         return this.userService.refreshToken(refreshTokenDto);
+    }
+
+    @PostMapping("password-reset/request")
+    @ResponseStatus(HttpStatus.OK)
+    public void requestPasswordReset(@RequestParam(name = "email") String email) throws MessagingException {
+        this.userService.requestPasswordReset(email);
+    }
+
+    @PostMapping("password-reset/reset")
+    @ResponseStatus(HttpStatus.OK)
+    public void resetPassword(
+            @RequestParam(name = "token") String token,
+            @RequestParam(name = "email") String email,
+            @RequestBody @Valid ResetPasswordDto resetPasswordDto
+    ) {
+        this.userService.resetPassword(token, email, resetPasswordDto);
     }
 
 }
