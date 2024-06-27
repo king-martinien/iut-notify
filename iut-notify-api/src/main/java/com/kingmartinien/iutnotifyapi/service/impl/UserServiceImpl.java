@@ -2,6 +2,7 @@ package com.kingmartinien.iutnotifyapi.service.impl;
 
 import com.kingmartinien.iutnotifyapi.dto.LoginRequestDto;
 import com.kingmartinien.iutnotifyapi.dto.LoginResponseDto;
+import com.kingmartinien.iutnotifyapi.dto.RefreshTokenDto;
 import com.kingmartinien.iutnotifyapi.entity.Activation;
 import com.kingmartinien.iutnotifyapi.entity.Role;
 import com.kingmartinien.iutnotifyapi.entity.Token;
@@ -13,6 +14,7 @@ import com.kingmartinien.iutnotifyapi.repository.TokenRepository;
 import com.kingmartinien.iutnotifyapi.repository.UserRepository;
 import com.kingmartinien.iutnotifyapi.security.JwtService;
 import com.kingmartinien.iutnotifyapi.service.EmailService;
+import com.kingmartinien.iutnotifyapi.service.TokenService;
 import com.kingmartinien.iutnotifyapi.service.UserService;
 import jakarta.mail.MessagingException;
 import jakarta.transaction.Transactional;
@@ -41,6 +43,7 @@ public class UserServiceImpl implements UserService {
     private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final TokenService tokenService;
 
     @Value("${application.activation-code.expiration}")
     private Long ACTIVATION_CODE_EXPIRATION;
@@ -90,15 +93,7 @@ public class UserServiceImpl implements UserService {
         if (authentication.isAuthenticated()) {
             User user = (User) authentication.getPrincipal();
             HashMap<String, Object> claims = new HashMap<>();
-            claims.put("fullname", user.getFullName());
-            String accessToken = this.jwtService.generateAccessToken(claims, user);
-            String refreshToken = this.jwtService.generateRefreshToken(claims, user);
-            this.revokeUserTokens(user);
-            this.saveToken(accessToken, refreshToken, user);
-            return LoginResponseDto.builder()
-                    .accessToken(accessToken)
-                    .refreshToken(refreshToken)
-                    .build();
+            return generateLoginResponseDto(claims, user);
         }
         return null;
     }
@@ -106,13 +101,31 @@ public class UserServiceImpl implements UserService {
     @Override
     public void logout() {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        this.revokeUserTokens(user);
+        this.tokenService.revokeUserTokens(user);
     }
 
-    private void revokeUserTokens(User user) {
-        List<Token> userTokens = this.tokenRepository.findAllByUser(user);
-        userTokens.forEach(token -> token.setExpired(true));
-        this.tokenRepository.saveAll(userTokens);
+    @Override
+    public LoginResponseDto refreshToken(RefreshTokenDto refreshTokenDto) {
+        Token token = this.tokenRepository.findByRefreshToken(refreshTokenDto.getRefreshToken())
+                .orElseThrow(() -> new RuntimeException("Refresh token not found"));
+        if (!this.jwtService.isTokenValid(token.getRefreshToken(), token.getUser())) {
+            throw new RuntimeException("Expired or invalid refresh token");
+        }
+        HashMap<String, Object> claims = new HashMap<>();
+        User user = token.getUser();
+        return generateLoginResponseDto(claims, user);
+    }
+
+    private LoginResponseDto generateLoginResponseDto(HashMap<String, Object> claims, User user) {
+        claims.put("fullname", user.getFullName());
+        String accessToken = this.jwtService.generateAccessToken(claims, user);
+        String refreshToken = this.jwtService.generateRefreshToken(claims, user);
+        this.tokenService.revokeUserTokens(user);
+        this.saveToken(accessToken, refreshToken, user);
+        return LoginResponseDto.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
     }
 
     private void saveToken(String accessToken, String refreshToken, User user) {

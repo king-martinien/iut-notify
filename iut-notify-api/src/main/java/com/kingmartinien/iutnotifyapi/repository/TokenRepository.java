@@ -15,6 +15,8 @@ public interface TokenRepository extends JpaRepository<Token, Long> {
 
     List<Token> findAllByUser(User user);
 
+    Optional<Token> findByRefreshToken(String refreshToken);
+
     void deleteAllByExpired(boolean expired);
 
 }

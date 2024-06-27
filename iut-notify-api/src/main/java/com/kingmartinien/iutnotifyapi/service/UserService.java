@@ -2,6 +2,7 @@ package com.kingmartinien.iutnotifyapi.service;
 
 import com.kingmartinien.iutnotifyapi.dto.LoginRequestDto;
 import com.kingmartinien.iutnotifyapi.dto.LoginResponseDto;
+import com.kingmartinien.iutnotifyapi.dto.RefreshTokenDto;
 import com.kingmartinien.iutnotifyapi.entity.User;
 import jakarta.mail.MessagingException;
 
@@ -14,5 +15,7 @@ public interface UserService {
     LoginResponseDto login(LoginRequestDto loginRequestDto);
 
     void logout();
+
+    LoginResponseDto refreshToken(RefreshTokenDto refreshTokenDto);
 
 }

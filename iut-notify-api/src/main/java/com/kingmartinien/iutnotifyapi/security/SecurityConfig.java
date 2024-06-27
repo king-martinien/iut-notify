@@ -32,7 +32,8 @@ public class SecurityConfig {
                         authorize.requestMatchers(HttpMethod.POST,
                                         "/auth/register",
                                         "/auth/activate-account",
-                                        "/auth/login"
+                                        "/auth/login",
+                                        "/auth/refresh-token"
                                 ).permitAll()
                                 .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
