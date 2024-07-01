@@ -60,6 +60,13 @@ public class User implements UserDetails {
             inverseJoinColumns = @JoinColumn(name = "role_id_fk"))
     private Set<Role> roles;
 
+    @ManyToMany
+    @JoinTable(
+            name = "T_USER_CHANNELS",
+            joinColumns = @JoinColumn(name = "user_id_fk"),
+            inverseJoinColumns = @JoinColumn(name = "channel_id_fk"))
+    private Set<Channel> channels;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         Set<SimpleGrantedAuthority> authorities = new HashSet<>();

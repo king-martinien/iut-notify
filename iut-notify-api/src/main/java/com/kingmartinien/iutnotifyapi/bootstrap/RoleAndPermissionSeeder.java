@@ -30,10 +30,11 @@ public class RoleAndPermissionSeeder implements ApplicationListener<ContextRefre
         Permission updatePublication = this.createPermission(PermissionEnum.UPDATE_PUBLICATIONS);
         Permission deletePublication = this.createPermission(PermissionEnum.DELETE_PUBLICATIONS);
         Permission createChannel = this.createPermission(PermissionEnum.CREATE_CHANNEL);
+        Permission updateChannel = this.createPermission(PermissionEnum.UPDATE_CHANNEL);
 
         this.createRole(RoleEnum.STUDENT, Set.of(readPublications));
         this.createRole(RoleEnum.TEACHER, Set.of(createPublication, updatePublication, deletePublication, createChannel));
-        this.createRole(RoleEnum.RA, Set.of(createChannel));
+        this.createRole(RoleEnum.RA, Set.of(createChannel, updateChannel));
     }
 
     private void createRole(RoleEnum roleEnum, Set<Permission> permissions) {
@@ -44,7 +45,7 @@ public class RoleAndPermissionSeeder implements ApplicationListener<ContextRefre
             role.setPermissions(permissions);
             this.roleRepository.save(role);
         }
-        if (optionalRole.isPresent() && optionalRole.get().getPermissions().isEmpty()) {
+        if (optionalRole.isPresent()) {
             optionalRole.get().setPermissions(permissions);
             this.roleRepository.save(optionalRole.get());
         }
