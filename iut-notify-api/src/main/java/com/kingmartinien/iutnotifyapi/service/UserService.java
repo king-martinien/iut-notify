@@ -7,6 +7,8 @@ import com.kingmartinien.iutnotifyapi.dto.ResetPasswordDto;
 import com.kingmartinien.iutnotifyapi.entity.User;
 import jakarta.mail.MessagingException;
 
+import java.util.List;
+
 public interface UserService {
 
     void createUser(User user) throws MessagingException;
@@ -22,5 +24,7 @@ public interface UserService {
     void requestPasswordReset(String email) throws MessagingException;
 
     void resetPassword(String token, String email, ResetPasswordDto resetPasswordDto);
+
+    List<User> getAllUsers();
 
 }

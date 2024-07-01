@@ -33,6 +33,7 @@ public class RoleAndPermissionSeeder implements ApplicationListener<ContextRefre
 
         this.createRole(RoleEnum.STUDENT, Set.of(readPublications));
         this.createRole(RoleEnum.TEACHER, Set.of(createPublication, updatePublication, deletePublication, createChannel));
+        this.createRole(RoleEnum.RA, Set.of(createChannel));
     }
 
     private void createRole(RoleEnum roleEnum, Set<Permission> permissions) {
@@ -42,6 +43,10 @@ public class RoleAndPermissionSeeder implements ApplicationListener<ContextRefre
             role.setLabel(roleEnum);
             role.setPermissions(permissions);
             this.roleRepository.save(role);
+        }
+        if (optionalRole.isPresent() && optionalRole.get().getPermissions().isEmpty()) {
+            optionalRole.get().setPermissions(permissions);
+            this.roleRepository.save(optionalRole.get());
         }
     }
 

@@ -145,6 +145,11 @@ public class UserServiceImpl implements UserService {
 
     }
 
+    @Override
+    public List<User> getAllUsers() {
+        return this.userRepository.findAll();
+    }
+
     private LoginResponseDto generateLoginResponseDto(HashMap<String, Object> claims, User user) {
         claims.put("fullname", user.getFullName());
         String accessToken = this.jwtService.generateAccessToken(claims, user);
@@ -168,7 +173,7 @@ public class UserServiceImpl implements UserService {
 
     private void checkIfUserAlreadyExist(User user) {
         Optional<User> optionalUserWithEmail = userRepository.findByEmail(user.getEmail());
-        Optional<User> optionalUserWithPhone = userRepository.findByEmail(user.getPhone());
+        Optional<User> optionalUserWithPhone = userRepository.findByPhone(user.getPhone());
         if (optionalUserWithEmail.isPresent()) {
             throw new RuntimeException("User with email " + user.getEmail() + " already exists");
         }
