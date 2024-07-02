@@ -67,6 +67,9 @@ public class User implements UserDetails {
             inverseJoinColumns = @JoinColumn(name = "channel_id_fk"))
     private Set<Channel> channels;
 
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private Set<Publication> publications;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         Set<SimpleGrantedAuthority> authorities = new HashSet<>();

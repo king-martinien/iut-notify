@@ -34,7 +34,7 @@ public class RoleAndPermissionSeeder implements ApplicationListener<ContextRefre
 
         this.createRole(RoleEnum.STUDENT, Set.of(readPublications));
         this.createRole(RoleEnum.TEACHER, Set.of(createPublication, updatePublication, deletePublication, createChannel));
-        this.createRole(RoleEnum.RA, Set.of(createChannel, updateChannel));
+        this.createRole(RoleEnum.RA, Set.of(createPublication, createChannel, updateChannel));
     }
 
     private void createRole(RoleEnum roleEnum, Set<Permission> permissions) {
