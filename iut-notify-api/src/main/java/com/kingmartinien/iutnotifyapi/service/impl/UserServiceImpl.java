@@ -1,14 +1,13 @@
 package com.kingmartinien.iutnotifyapi.service.impl;
 
-import com.kingmartinien.iutnotifyapi.dto.LoginRequestDto;
-import com.kingmartinien.iutnotifyapi.dto.LoginResponseDto;
-import com.kingmartinien.iutnotifyapi.dto.RefreshTokenDto;
-import com.kingmartinien.iutnotifyapi.dto.ResetPasswordDto;
+import com.kingmartinien.iutnotifyapi.dto.*;
 import com.kingmartinien.iutnotifyapi.entity.Activation;
 import com.kingmartinien.iutnotifyapi.entity.Role;
 import com.kingmartinien.iutnotifyapi.entity.Token;
 import com.kingmartinien.iutnotifyapi.entity.User;
 import com.kingmartinien.iutnotifyapi.enums.EmailTemplateEnum;
+import com.kingmartinien.iutnotifyapi.enums.RoleEnum;
+import com.kingmartinien.iutnotifyapi.mapper.UserMapper;
 import com.kingmartinien.iutnotifyapi.repository.ActivationRepository;
 import com.kingmartinien.iutnotifyapi.repository.RoleRepository;
 import com.kingmartinien.iutnotifyapi.repository.TokenRepository;
@@ -19,7 +18,12 @@ import com.kingmartinien.iutnotifyapi.service.TokenService;
 import com.kingmartinien.iutnotifyapi.service.UserService;
 import jakarta.mail.MessagingException;
 import jakarta.transaction.Transactional;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -27,10 +31,16 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @RequiredArgsConstructor
@@ -45,6 +55,8 @@ public class UserServiceImpl implements UserService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final TokenService tokenService;
+    private final Validator validator;
+    private final UserMapper userMapper;
 
     @Value("${application.activation-code.expiration}")
     private Long ACTIVATION_CODE_EXPIRATION;
@@ -148,6 +160,68 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<User> getAllUsers() {
         return this.userRepository.findAll();
+    }
+
+    @Override
+    public UploadResult uploadUsers(MultipartFile file, RoleEnum role) throws IOException {
+        if (!Objects.equals(file.getContentType(), "text/csv")) {
+            throw new RuntimeException("Invalid file type : upload a csv file.");
+        }
+        Reader reader = new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8);
+        enum Header {firstname, lastname, email, phone, password}
+        CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.builder()
+                .setHeader(Header.class)
+                .setIgnoreHeaderCase(true)
+                .setSkipHeaderRecord(true)
+                .build());
+        List<CSVRecord> records = csvParser.getRecords().stream().toList();
+        int total = records.size();
+        AtomicInteger success = new AtomicInteger();
+        AtomicInteger line = new AtomicInteger();
+        List<UploadError> errors = new ArrayList<>();
+        records.forEach(record -> {
+            line.addAndGet(1);
+            Set<Role> roles = new HashSet<>();
+            Optional<Role> optionalRole = this.roleRepository.findByLabel(role);
+            if (optionalRole.isEmpty()) {
+                throw new RuntimeException("Role with label " + role + " does not exist");
+            }
+            roles.add(optionalRole.get());
+            User user = new User();
+            user.setFirstName(record.get("firstname"));
+            user.setLastName(record.get("lastname"));
+            user.setEmail(record.get("email"));
+            user.setPhone(record.get("phone"));
+            user.setEnabled(true);
+            user.setPassword(this.passwordEncoder.encode(record.get("password")));
+            user.setRoles(roles);
+            Set<ConstraintViolation<CreateUserDto>> violations = validator.validate(this.userMapper.toCreateUserDto(user));
+            if (violations.isEmpty() &&
+                    !this.userRepository.existsByPhone(user.getPhone()) &&
+                    !this.userRepository.existsByEmail(user.getEmail())) {
+                this.userRepository.save(user);
+                success.getAndIncrement();
+            } else {
+                StringBuilder stringBuilder = new StringBuilder();
+                violations.forEach(violation -> {
+                    if (!stringBuilder.toString().contains(violation.getMessage())) {
+                        stringBuilder.append(violation.getMessage()).append(" ");
+                    }
+                });
+                if (this.userRepository.existsByEmail(user.getEmail())) {
+                    stringBuilder.append("Duplicate email address found : ").append(user.getEmail());
+                }
+                if (this.userRepository.existsByPhone(user.getPhone())) {
+                    stringBuilder.append("Duplicate phone number found : ").append(user.getPhone());
+                }
+                errors.add(UploadError.builder().line(line.get()).error(stringBuilder.toString()).build());
+            }
+        });
+        return UploadResult.builder()
+                .total(total)
+                .success(success.get())
+                .errors(errors)
+                .build();
     }
 
     private LoginResponseDto generateLoginResponseDto(HashMap<String, Object> claims, User user) {

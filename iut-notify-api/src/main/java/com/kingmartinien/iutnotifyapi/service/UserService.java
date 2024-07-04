@@ -1,12 +1,12 @@
 package com.kingmartinien.iutnotifyapi.service;
 
-import com.kingmartinien.iutnotifyapi.dto.LoginRequestDto;
-import com.kingmartinien.iutnotifyapi.dto.LoginResponseDto;
-import com.kingmartinien.iutnotifyapi.dto.RefreshTokenDto;
-import com.kingmartinien.iutnotifyapi.dto.ResetPasswordDto;
+import com.kingmartinien.iutnotifyapi.dto.*;
 import com.kingmartinien.iutnotifyapi.entity.User;
+import com.kingmartinien.iutnotifyapi.enums.RoleEnum;
 import jakarta.mail.MessagingException;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 public interface UserService {
@@ -26,5 +26,7 @@ public interface UserService {
     void resetPassword(String token, String email, ResetPasswordDto resetPasswordDto);
 
     List<User> getAllUsers();
+
+    UploadResult uploadUsers(MultipartFile file, RoleEnum role) throws IOException;
 
 }

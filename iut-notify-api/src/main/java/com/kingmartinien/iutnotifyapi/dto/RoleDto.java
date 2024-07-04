@@ -1,15 +1,13 @@
 package com.kingmartinien.iutnotifyapi.dto;
 
 import com.kingmartinien.iutnotifyapi.enums.RoleEnum;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.Set;
 
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class RoleDto {

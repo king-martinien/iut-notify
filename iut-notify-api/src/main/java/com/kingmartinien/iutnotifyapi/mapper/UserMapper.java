@@ -17,6 +17,8 @@ public interface UserMapper {
     @Mapping(source = "fullName", target = "fullName")
     UserDto toDto(User user);
 
+    CreateUserDto toCreateUserDto(User user);
+
     List<UserDto> toDto(List<User> users);
 
 }

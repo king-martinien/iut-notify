@@ -34,6 +34,7 @@
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
         <io.jsonwebtoken.version>0.12.6</io.jsonwebtoken.version>
         <com.google.firebase.version>9.3.0</com.google.firebase.version>
+        <org.apache.commons.version>1.11.0</org.apache.commons.version>
     </properties>
     <dependencies>
         <dependency>
@@ -120,8 +121,14 @@
             <artifactId>firebase-admin</artifactId>
             <version>${com.google.firebase.version}</version>
         </dependency>
-
         <!-- END FIREBASE ADMIN ===-->
+        <!--=== APACHE COMMONS CSV -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>${org.apache.commons.version}</version>
+        </dependency>
+        <!-- END APACHE COMMONS CSV ===-->
     </dependencies>
 
     <build>
